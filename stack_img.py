@@ -91,8 +91,7 @@ def animate(images, output,
         if len(img_groups[-1]) == frange:
             img_groups.append(img_groups[-1][1:])
     
-    for ig in img_groups:
-        total += len(ig)
+    total = sum([len(x) for x in img_groups])
 
     progress = 0
     for grp_index, img_group in enumerate(img_groups):
