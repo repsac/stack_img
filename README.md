@@ -17,7 +17,7 @@ The larger the number, the longer the movie will take to compile
 
 `python -m stack_img animate <FOLDER> --frange 60`
 
-## Combininations are supported
+## Combinations are supported
 Mix and match the range of frames and Nth frame arguments
 
 `python -m stack_img animate <FOLDER> --frange 5 --nframe 2`
