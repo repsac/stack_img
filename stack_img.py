@@ -72,7 +72,8 @@ def animate(images, output,
             pix_fmt=PIX_FMT,
             constant_rate=CONSTANT_RATE,
             nframe=NFRAME,
-            frange=FRANGE):
+            frange=FRANGE,
+            preserve_length=False):
     prefix = os.path.basename(os.path.splitext(__file__)[0])
     tmpdir = tempfile.mkdtemp(prefix='{}-'.format(prefix))
     ext = _ext(images[0])
@@ -121,8 +122,18 @@ def animate(images, output,
 
         for tmpfile in tmpfiles:
             name = 'stacked.{:05d}{}'.format(img_seq, ext)
-            shutil.move(tmpfile, os.path.join(tmpdir, name))
+            dest = os.path.join(tmpdir, name)
+            shutil.move(tmpfile, dest)
             img_seq += 1
+
+            #@TODO: would need a flag for this?
+            if not preserve_length:
+                continue
+
+            for _ in range(1, nframe):
+                name = 'stacked.{:05d}{}'.format(img_seq, ext)
+                shutil.copy(dest, os.path.join(tmpdir, name))
+                img_seq += 1
         
         shutil.rmtree(subtemp)
     
