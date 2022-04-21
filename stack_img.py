@@ -79,19 +79,8 @@ def animate(images, output,
     ext = _ext(images[0])
     total = len(images)
     img_seq = 1
-
     frange = total if frange == FRANGE else frange
-    img_groups = [[]]
-
-    for index in range(total):
-
-        if index % nframe:
-            continue
-
-        img_groups[-1].append(index)
-        if len(img_groups[-1]) == frange:
-            img_groups.append(img_groups[-1][1:])
-    
+    img_groups = _img_groups(total, nframe, frange)
     total = sum([len(x) for x in img_groups])
 
     progress = 0
@@ -114,7 +103,7 @@ def animate(images, output,
             progress += 1
             name = 'tmp{}-{}{}'.format(grp_index, img_index, ext)
             tmpfiles.append(os.path.join(subtemp, name))
-            stack([x, y], tmpfiles[-1], rendering=rendering)
+            _stack([x, y], tmpfiles[-1], rendering)
 
             print("Stacking progress: {0:.1f}%".format((progress / total) * 100))
 
@@ -151,7 +140,16 @@ def animate(images, output,
     shutil.rmtree(tmpdir)
 
 
-def stack(images, output, rendering='median'):
+def stack(images, output, 
+          rendering='median',
+          nframe=NFRAME):
+    total = len(images)
+    indices = _img_groups(total, nframe, total)[0]
+    images = [images[i] for i in indices]
+    _stack(images, output, rendering)
+
+
+def _stack(images, output, rendering):
     ext = _ext(images[0])[1:].lower()
     try:
         func = RENDERING[rendering]
@@ -166,6 +164,21 @@ def stack(images, output, rendering='median'):
         'tif': 'TIFF'
     }
     newarray.save(output, format=formats.get(ext, ext.upper()))
+
+
+def _img_groups(total, nframe, frange):
+    img_groups = [[]]
+
+    for index in range(total):
+
+        if index % nframe:
+            continue
+
+        img_groups[-1].append(index)
+        if len(img_groups[-1]) == frange:
+            img_groups.append(img_groups[-1][1:])
+
+    return img_groups
 
 
 def _ext(filepath):
@@ -203,6 +216,7 @@ def _default_parser():
 
 
 def _stack_parser(parser):
+    parser.add_argument('-n', '--nframe', type=int, default=NFRAME)
     return parser
 
 
@@ -223,7 +237,7 @@ def _mode_parser():
 
     if args.mode not in ('stack', 'animate'):
         error = "Unkown mode: '{}'\nValid modes: {}".format(
-            args.mode, ', '.join(modes)
+            args.mode, ', '.join(RENDERING)
         )
         raise RuntimeError(error)
     
@@ -243,8 +257,9 @@ def _main():
 
     if output_path is None:
         ext = '.mp4' if mode == 'animate' else _ext(images[0])
-        prefix = '{}-'.format(os.path.join(os.path.dirname(input_path),
-                                           os.path.basename(input_path)))
+        prefix = '{}-{}-'.format(os.path.join(os.path.dirname(input_path),
+                                             os.path.basename(input_path)),
+                                kwargs['rendering'])
         output_path = tempfile.mktemp(prefix=prefix, suffix=ext)
 
     glo[mode](images, output_path, **kwargs)
